@@ -13,25 +13,13 @@ export interface MirrorResult {
 
 export type ContentType = "movies" | "series" | "sports" | "music" | "software";
 
-const REGION_SERPER: Record<string, { gl: string; hl: string }> = {
-  us: { gl: "us", hl: "en" },
-  uk: { gl: "uk", hl: "en" },
-  ua: { gl: "ua", hl: "uk" },
-  il: { gl: "il", hl: "he" },
-  cy: { gl: "cy", hl: "el" },
-  ae: { gl: "ae", hl: "ar" },
-  de: { gl: "de", hl: "de" },
-  fr: { gl: "fr", hl: "fr" },
-  es: { gl: "es", hl: "es" },
-  it: { gl: "it", hl: "it" },
-  br: { gl: "br", hl: "pt" },
-  tr: { gl: "tr", hl: "tr" },
-  in: { gl: "in", hl: "hi" },
-  ru: { gl: "ru", hl: "ru" },
-  pl: { gl: "pl", hl: "pl" },
-  ma: { gl: "ma", hl: "ar" },
-  ca: { gl: "ca", hl: "en" },
-};
+// Auto-build REGION_SERPER from regions.ts languageCode
+// For regions not in this map, we fallback to { gl: id, hl: languageCode }
+import { REGIONS } from "./regions";
+
+const REGION_SERPER: Record<string, { gl: string; hl: string }> = Object.fromEntries(
+  REGIONS.map((r) => [r.id, { gl: r.id, hl: r.languageCode }])
+);
 
 // Domains we never return as mirrors (legit sites that mention pirate brands)
 const MIRROR_BLOCKLIST = new Set([

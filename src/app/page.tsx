@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { ParseResult } from "@/lib/types";
 import { REGIONS, Region } from "@/lib/regions";
 
@@ -45,6 +45,94 @@ function confidenceBg(c: number): string {
   if (c >= 50) return "bg-yellow-900/30 border-yellow-700/50";
   if (c >= 30) return "bg-orange-900/30 border-orange-700/50";
   return "bg-red-900/30 border-red-700/50";
+}
+
+function RegionPicker({
+  value,
+  onChange,
+  disabled,
+}: {
+  value: string;
+  onChange: (id: string) => void;
+  disabled?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  const selected = REGIONS.find((r) => r.id === value);
+  const filtered = REGIONS.filter((r) => {
+    const q = search.toLowerCase();
+    return (
+      r.name.toLowerCase().includes(q) ||
+      r.language.toLowerCase().includes(q) ||
+      r.id.toLowerCase().includes(q) ||
+      r.flag.toLowerCase().includes(q)
+    );
+  });
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => !disabled && setOpen(!open)}
+        disabled={disabled}
+        className="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-sm text-slate-200 text-left flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+      >
+        <span>
+          {selected ? `${selected.flag} ${selected.name} (${selected.language})` : "Select region"}
+        </span>
+        <svg className={`w-4 h-4 text-slate-400 transition-transform ${open ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {open && (
+        <div className="absolute z-50 mt-1 w-full bg-slate-800 border border-slate-600 rounded-lg shadow-xl max-h-80 flex flex-col">
+          <div className="p-2 border-b border-slate-700">
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search country..."
+              className="w-full bg-slate-700 border-none rounded px-3 py-2 text-sm text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              autoFocus
+            />
+          </div>
+          <div className="overflow-y-auto flex-1">
+            {filtered.length === 0 && (
+              <div className="px-4 py-3 text-sm text-slate-500">No results</div>
+            )}
+            {filtered.map((r) => (
+              <button
+                key={r.id}
+                onClick={() => {
+                  onChange(r.id);
+                  setOpen(false);
+                  setSearch("");
+                }}
+                className={`w-full text-left px-4 py-2.5 text-sm hover:bg-slate-700 transition-colors flex items-center gap-2 ${
+                  r.id === value ? "bg-blue-900/30 text-blue-400" : "text-slate-200"
+                }`}
+              >
+                <span className="text-base">{r.flag}</span>
+                <span>{r.name}</span>
+                <span className="text-slate-500 text-xs ml-auto">{r.language}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function Home() {
@@ -290,18 +378,11 @@ export default function Home() {
               {/* Region */}
               <div>
                 <label className="block text-sm font-medium text-slate-300 mb-2">Region</label>
-                <select
+                <RegionPicker
                   value={selectedRegion}
-                  onChange={(e) => setSelectedRegion(e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  onChange={setSelectedRegion}
                   disabled={isSearching}
-                >
-                  {REGIONS.map((r: Region) => (
-                    <option key={r.id} value={r.id}>
-                      {r.flag} {r.name} ({r.language})
-                    </option>
-                  ))}
-                </select>
+                />
               </div>
 
               {/* Content Type */}
