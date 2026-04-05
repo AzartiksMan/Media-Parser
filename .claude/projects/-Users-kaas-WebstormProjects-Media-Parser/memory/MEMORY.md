@@ -1,0 +1,2 @@
+- [Project context](project_media_parser.md) — Media-Parser: pirate site parser for media buyers, multi-region
+- [User profile](user_kaas.md) — kaas: media buyer, Russian-speaking, works with Kent
