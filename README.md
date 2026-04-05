@@ -1,36 +1,71 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Media Parser
 
-## Getting Started
+Pirate site discovery tool for media buyers. Finds pirate streaming sites by region, validates them (video players, ad networks, fingerprinting), extracts contacts (emails, phones, socials).
 
-First, run the development server:
+## Stack
+
+- **Next.js** — frontend + API
+- **Playwright** — headless Chrome for crawling & fingerprinting
+- **Cheerio** — HTML parsing
+- **Serper.dev** — Google search API (mirror discovery)
+- **Claude API** — site analysis (optional)
+
+## How it works
+
+1. **Seed database** — 180+ known pirate sites across 100+ regions
+2. **Mirror search** — finds current domains via Serper (e.g. egybest.run, egybest.link)
+3. **Validation** — HTTP alive check + Playwright fingerprint (video players, pirate ad networks, quality labels)
+4. **Snowball** — crawls validated sites for links to more pirate sites
+5. **Contact extraction** — emails, phones, socials, advertising pages
+
+## Local Setup
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/AzartiksMan/Media-Parser.git
+cd Media-Parser
+npm install
+npx playwright install chromium
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Create `.env`:
+```
+SERPER_API_KEY=your_serper_key
+ANTHROPIC_API_KEY=your_key_optional
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Run:
+```bash
+npm run dev
+# Open http://localhost:3000
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Deploy (Render.com)
 
-## Learn More
+We deploy via **Render** using Docker.
 
-To learn more about Next.js, take a look at the following resources:
+### Setup
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. Go to [render.com](https://render.com) -> Sign in with GitHub
+2. **New** -> **Web Service**
+3. Connect repo `AzartiksMan/Media-Parser`
+4. Settings:
+   - **Branch**: `main`
+   - **Runtime**: `Docker`
+   - **Instance Type**: Free (512MB) or Starter ($7/mo, 512MB, recommended)
+5. **Environment Variables**:
+   - `SERPER_API_KEY` = your serper.dev key
+   - `ANTHROPIC_API_KEY` = (optional) for AI-powered site analysis
+6. **Deploy**
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Current deployment
 
-## Deploy on Vercel
+- **Platform**: Render.com (Docker)
+- **URL**: https://media-parser-vk42.onrender.com
+- **Auto-deploy**: pushes to `main` trigger redeploy
+- **Free tier note**: instance sleeps after 15 min inactivity, first request takes ~30-50s to wake up
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### If switching to paid
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+For better performance (Playwright needs RAM):
+- **Starter** ($7/mo) — 512MB, no sleep
+- **Standard** ($25/mo) — 2GB RAM, recommended for heavy use
