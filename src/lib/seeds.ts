@@ -242,15 +242,57 @@ export const SEED_SITES: SeedSite[] = [
   { domain: "greeksubtitles.info", region: ["cy"], contentType: ["movies", "series"], brand: "greeksubtitles" },
 ];
 
+// Fallback mapping: if a region has no seeds, try these parent regions
+const REGION_FALLBACKS: Record<string, string[]> = {
+  // English-speaking → use US + UK seeds
+  ca: ["us", "uk"], au: ["us", "uk"], nz: ["us", "uk"], ie: ["uk", "us"],
+  sg: ["us", "uk"], ph: ["us", "uk"], za: ["us", "uk"], ng: ["us", "uk"],
+  ke: ["us", "uk"], gh: ["us", "uk"], mt: ["uk"],
+  // Arabic-speaking → use AE seeds
+  sa: ["ae", "ma"], qa: ["ae"], kw: ["ae"], bh: ["ae"], om: ["ae"],
+  jo: ["ae"], lb: ["ae"], iq: ["ae"], eg: ["ae", "ma"], dz: ["ae", "ma"],
+  tn: ["ae", "ma"], ly: ["ae", "ma"],
+  // German-speaking → use DE seeds
+  at: ["de"], ch: ["de", "fr"],
+  // French-speaking → use FR seeds
+  be: ["fr", "nl"], lu: ["fr"], sn: ["fr"], ci: ["fr"],
+  // Spanish-speaking → use ES seeds
+  mx: ["es"], ar: ["es"], cl: ["es"], co: ["es"], pe: ["es"], ve: ["es"], ec: ["es"],
+  // Portuguese → use BR seeds
+  pt: ["br"],
+  // Balkans → use RS seeds or similar
+  ba: ["rs"], me: ["rs"], mk: ["rs"], xk: ["al"],
+  // CIS → use RU seeds
+  by: ["ru"], kz: ["ru"], uz: ["ru"], md: ["ro", "ru"],
+  // Others
+  gr: ["cy"],
+  hk: ["cn", "tw"], tw: ["cn"],
+  lk: ["in"], bd: ["in"], pk: ["in"],
+  my: ["id"],
+};
+
 /**
  * Get seeds matching a region and optionally a content type.
+ * Falls back to parent regions if no direct match.
  */
 export function getSeedsForRegion(regionId: string, contentType?: string): SeedSite[] {
-  return SEED_SITES.filter((s) => {
-    const regionMatch = s.region.includes(regionId);
-    const contentMatch = !contentType || s.contentType.includes(contentType);
-    return regionMatch && contentMatch;
-  });
+  const filter = (regions: string[]) =>
+    SEED_SITES.filter((s) => {
+      const regionMatch = regions.some((r) => s.region.includes(r));
+      const contentMatch = !contentType || s.contentType.includes(contentType);
+      return regionMatch && contentMatch;
+    });
+
+  // Try direct match first
+  const direct = filter([regionId]);
+  if (direct.length > 0) return direct;
+
+  // Try fallback regions
+  const fallbacks = REGION_FALLBACKS[regionId];
+  if (fallbacks) return filter(fallbacks);
+
+  // Last resort: return all English seeds
+  return filter(["us", "uk"]);
 }
 
 /**
